@@ -1,15 +1,43 @@
-import { Outlet } from "react-router-dom/dist"
-import ScrollToTop from "../components/ScrollToTop"
-import { Navbar } from "../components/Navbar"
-import { Footer } from "../components/Footer"
+import React, { useState, useEffect } from 'react';
+import { Outlet } from "react-router-dom";
+import { Navbar } from "../components/Navbar";
+import { Footer } from "../components/Footer";
 
-// Base component that maintains the navbar and footer throughout the page and the scroll to top functionality.
 export const Layout = () => {
+    const [personajes, setPersonajes] = useState([]);
+    const [planetas, setPlanetas] = useState([]);
+    const [cargando, setCargando] = useState(true);
+
+    useEffect(() => {
+        Promise.all([
+            fetch("https://dragonball-api.com/api/characters"),
+            fetch("https://dragonball-api.com/api/planets")
+        ])
+        .then(([respuestaPersonajes, respuestaPlanetas]) => {
+            if (!respuestaPersonajes.ok || !respuestaPlanetas.ok) {
+                throw new Error("La respuesta de la API no fue exitosa.");
+            }
+            return Promise.all([respuestaPersonajes.json(), respuestaPlanetas.json()]);
+        })
+        .then(([datosPersonajes, datosPlanetas]) => {
+            setPersonajes(datosPersonajes.items);
+            setPlanetas(datosPlanetas.items);
+        })
+        .catch((error) => {
+            console.error("Ha ocurrido un error al cargar los datos desde el Layout:", error);
+        })
+        .finally(() => {
+            setCargando(false);
+        });
+    }, []);
+
     return (
-        <ScrollToTop>
+        <div className="d-flex flex-column min-vh-100">
             <Navbar />
-                <Outlet />
+            <main className="flex-grow-1">
+                <Outlet context={{ personajes, planetas, cargando }} />
+            </main>
             <Footer />
-        </ScrollToTop>
-    )
-}
+        </div>
+    );
+};

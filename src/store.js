@@ -1,32 +1,54 @@
-export const initialStore=()=>{
-  return{
-    message: null,
-    todos: [
-      {
-        id: 1,
-        title: "Make the bed",
-        background: null,
-      },
-      {
-        id: 2,
-        title: "Do my homework",
-        background: null,
-      }
-    ]
-  }
-}
+const cargarFavoritosDesdeStorage = () => {
+    const favoritosGuardados = localStorage.getItem('favoritos');
+
+
+    return favoritosGuardados ? JSON.parse(favoritosGuardados) : [];
+};
+
+export const initialStore = () => {
+    return {
+        characters: [],
+        planets: [],
+
+        favorites: cargarFavoritosDesdeStorage()
+    };
+};
+
+
+const guardarFavoritosEnStorage = (favoritos) => {
+
+    localStorage.setItem('favoritos', JSON.stringify(favoritos));
+};
 
 export default function storeReducer(store, action = {}) {
-  switch(action.type){
-    case 'add_task':
+    let nuevaStore;
 
-      const { id,  color } = action.payload
+    switch (action.type) {
+        case 'ADD_FAVORITE':
 
-      return {
-        ...store,
-        todos: store.todos.map((todo) => (todo.id === id ? { ...todo, background: color } : todo))
-      };
-    default:
-      throw Error('Unknown action.');
-  }    
+            if (store.favorites.find(fav => fav.id === action.payload.id && fav.type === action.payload.type)) {
+                return store;
+            }
+
+            nuevaStore = {
+                ...store,
+                favorites: [...store.favorites, action.payload]
+            };
+            guardarFavoritosEnStorage(nuevaStore.favorites);
+            return nuevaStore;
+
+        case 'REMOVE_FAVORITE':
+            nuevaStore = {
+                ...store,
+                favorites: store.favorites.filter(
+                    (item) => !(item.id === action.payload.id && item.type === action.payload.type)
+                )
+            };
+
+            guardarFavoritosEnStorage(nuevaStore.favorites);
+            return nuevaStore;
+
+        default:
+            return store;
+    }
 }
